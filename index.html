@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4f3cf0">
+  <meta name="description" content="100% offline Photo-First Mistake Notebook and Spaced Repetition revision app for competitive exam students.">
+  <title>GaltiBook</title>
+  <link rel="manifest" href="manifest.json">
+  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,sans-serif}
+    body{background:#f3f2ee;color:#15141c;padding:16px;max-width:540px;margin:auto}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    h1{font-size:24px;color:#4f3cf0}
+    .card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+    input,select,textarea{width:100%;padding:10px 12px;margin:6px 0 12px;border:1px solid #ddd;border-radius:10px;font-size:15px}
+    .btn{background:#4f3cf0;color:#fff;border:0;padding:12px 16px;border-radius:12px;font-weight:600;width:100%;font-size:15px;cursor:pointer}
+    .btn.sec{background:#e7e5fb;color:#4f3cf0;margin-top:8px}
+    .item{border-bottom:1px solid #eee;padding:12px 0}
+    .item:last-child{border:0}
+    .item img{width:100%;max-height:240px;object-fit:contain;border-radius:10px;margin-top:8px;background:#f9f9f9}
+    .tag{display:inline-block;background:#e7e5fb;color:#4f3cf0;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+    .del{background:#fee2e2;color:#dc2626;border:0;padding:5px 10px;border-radius:8px;font-size:12px;float:right}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GaltiBook</h1>
+    <span class="tag" id="cnt">0 Mistakes</span>
+  </header>
+
+  <div class="card">
+    <select id="sub">
+      <option>Math / Quantitative</option>
+      <option>Reasoning</option>
+      <option>General Knowledge / GS</option>
+      <option>English</option>
+      <option>Other</option>
+    </select>
+    <input type="file" id="pic" accept="image/*">
+    <textarea id="note" rows="2" placeholder="Galti kya hui aur sahi trick kya hai?"></textarea>
+    <button class="btn" onclick="save()">+ Save Mistake</button>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">Revision Notebook</h3>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    let db = JSON.parse(localStorage.getItem('gb_data') || '[]');
+    function render() {
+      document.getElementById('cnt').textContent = db.length + ' Mistakes';
+      const el = document.getElementById('list');
+      if (!db.length) { el.innerHTML = '<p style="color:#666;font-size:14px">Abhi koi galti save nahi hai.</p>'; return; }
+      el.innerHTML = db.map((x, i) => `
+        <div class="item">
+          <span class="tag">${x.sub}</span>
+          <button class="del" onclick="del(${i})">Delete</button>
+          <p style="margin-top:8px;font-size:14px">${x.note || ''}</p>
+          ${x.img ? `<img src="${x.img}">` : ''}
+          <small style="color:#777;display:block;margin-top:6px">Added: ${x.date}</small>
+        </div>`).join('');
+    }
+    function save() {
+      const sub = document.getElementById('sub').value;
+      const note = document.getElementById('note').value.trim();
+      const file = document.getElementById('pic').files[0];
+      const finish = (img) => {
+        db.unshift({ sub, note, img, date: new Date().toLocaleDateString() });
+        localStorage.setItem('gb_data', JSON.stringify(db));
+        document.getElementById('note').value = '';
+        document.getElementById('pic').value = '';
+        render();
+      };
+      if (file) {
+        const r = new FileReader();
+        r.onload = () => finish(r.result);
+        r.readAsDataURL(file);
+      } else if (note) {
+        finish('');
+      }
+    }
+    function del(i) {
+      db.splice(i, 1);
+      localStorage.setItem('gb_data', JSON.stringify(db));
+      render();
+    }
+    render();
+  </script>
+</body>
+</html>
